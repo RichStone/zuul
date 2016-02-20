@@ -1,13 +1,23 @@
-(def house
-  (dict :entrance-hall (dict :name  "entrance hall"
-                             :exits (dict :west :west-wing
-                                          :east :east-wing))
+(def world
+  (dict :main-hall (dict :name  "entrance hall"
+                             :exits (dict :west  :west-wing
+                                          :east  :east-wing
+                                          :south :courtyard))
 
         :west-wing     (dict :name  "west wing"
-                             :exits (dict :east :entrance-hall))
+                             :exits (dict :east :main-hall))
 
         :east-wing     (dict :name  "east wing"
-                             :exits (dict :west :entrance-hall))))
+                             :exits (dict :west :main-hall))
+
+        :courtyard     (dict :name  "courtyard"
+                             :exits (dict :north :main-hall
+                                          :east  :cellar))
+
+        :cellar        (dict :name "cellar"
+                             :exits (dict :west :courtyard))))
+
+(def starting-point (world :main-hall))
 
 (defn keys (d)
   (. d :keys))
@@ -43,11 +53,10 @@
   (let (direction (text-drop 3 go-action) ; remove "go "
         exits     (room :exits))
     (if (exits direction)
-      (action (house (exits direction)))
+      (action (world (exits direction)))
       (do
         (println "Invalid direction.")
         (action room)))))
-
 
 (defn action (current-room)
   (print-room current-room)
@@ -60,4 +69,11 @@
       (println "Invalid action.")
       (action current-room))))))
 
-(action (house :entrance-hall))
+(defn play ()
+  (println "Welcome to Zuul.")
+  (println "Type 'go {direction}' to walk around.")
+  (println "Type 'quit' to quit the game.")
+  (println "")
+  (action starting-point))
+
+(play)
