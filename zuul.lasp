@@ -1,13 +1,13 @@
 (def house
-  (dict :entrance-hall (dict :name "entrance hall"
-                             :west :west-wing
-                             :east :east-wing)
+  (dict :entrance-hall (dict :name  "entrance hall"
+                             :exits (dict :west :west-wing
+                                          :east :east-wing))
 
-        :west-wing     (dict :name "west wing"
-                             :east :entrance-hall)
+        :west-wing     (dict :name  "west wing"
+                             :exits (dict :east :entrance-hall))
 
-        :east-wing     (dict :name "east wing"
-                             :west :entrance-hall)))
+        :east-wing     (dict :name  "east wing"
+                             :exits (dict :west :entrance-hall))))
 
 (defn keys (d)
   (. d :keys))
@@ -15,8 +15,17 @@
 (defn comma-separate (d)
   (. d :join ", "))
 
+(defn starts-with? (text search)
+  (. text :start_with? search))
+
+; Drop n characters from text
+(defn text-drop (n text)
+  (list->text (drop n (text->list text))))
+
+
+
 (defn exits (room)
-  (comma-separate (keys (dissoc room :name))))
+  (comma-separate (keys (room :exits))))
 
 (defn print-room (room)
   (print "You are in the ")
@@ -30,11 +39,21 @@
 (defn prompt-user-action ()
   (prompt "What do you want to do? "))
 
+(defn go-action (room go-action)
+  (let (direction (text-drop 3 go-action) ; remove "go "
+        exits     (room :exits))
+    (if (exits direction)
+      (action (house (exits direction)))
+      (do
+        (println "Invalid direction.")
+        (action room)))))
+
+
 (defn action (current-room)
   (print-room current-room)
   (let (input (prompt-user-action))
-    (if (current-room input)
-      (action (house (current-room input)))
+    (if (starts-with? input "go ")
+      (go-action current-room input)
     (if (= "quit" input)
       (println "Bye!")
     (do ; else
