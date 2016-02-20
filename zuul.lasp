@@ -35,8 +35,10 @@
   (let (input (prompt-user-action))
     (if (current-room input)
       (action (house (current-room input)))
-      (if (= "quit" input)
-        (println "Bye!")
-        (action current-room)))))
+    (if (= "quit" input)
+      (println "Bye!")
+    (do ; else
+      (println "Invalid action.")
+      (action current-room))))))
 
 (action (house :entrance-hall))
