@@ -1,0 +1,42 @@
+(def house
+  (dict :entrance-hall (dict :name "entrance hall"
+                             :west :west-wing
+                             :east :east-wing)
+
+        :west-wing     (dict :name "west wing"
+                             :east :entrance-hall)
+
+        :east-wing     (dict :name "east wing"
+                             :west :entrance-hall)))
+
+(defn keys (d)
+  (. d :keys))
+
+(defn comma-separate (d)
+  (. d :join ", "))
+
+(defn exits (room)
+  (comma-separate (keys (dissoc room :name))))
+
+(defn print-room (room)
+  (print "You are in the ")
+  (print (room :name))
+  (println ".")
+
+  (print "Exits: ")
+  (println (exits room))
+  (println ""))
+
+(defn prompt-user-action ()
+  (prompt "What do you want to do? "))
+
+(defn action (current-room)
+  (print-room current-room)
+  (let (input (prompt-user-action))
+    (if (current-room input)
+      (action (house (current-room input)))
+      (if (= "quit" input)
+        (println "Bye!")
+        (action current-room)))))
+
+(action (house :entrance-hall))
