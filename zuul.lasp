@@ -14,8 +14,8 @@
                          :exits (dict :north :main-hall
                                       :east  :cellar))
 
-        :cellar        (dict :name "cellar"
-                             :exits (dict :west :courtyard))))
+        :cellar    (dict :name "cellar"
+                         :exits (dict :west :courtyard))))
 
 (def starting-point (world :main-hall))
 
