@@ -1,6 +1,6 @@
-(defn cliff-action ()
+(defn cliff-action (area)
   (println "You fell off a cliff and died instantly.")
-  true) ; Game over
+  (game-over))
 
 (def world
   (dict :main-hall (dict :name  "entrance hall"
@@ -59,11 +59,8 @@
   (let (area         (world area-name)
         enter-action (area :action))
     (if enter-action
-      (if (enter-action)
-        (game-over)
-        (action area))
-      (action area)))) ; TODO: Fix duplication
-
+      (enter-action area)
+      (action area))))
 
 (defn go-action (room go-action)
   (let (direction (text-drop 3 go-action) ; remove "go "
