@@ -1,21 +1,24 @@
 (defn cliff-action (area)
   (println "You fell off a cliff and died instantly.")
   (game-over))
-  
+
 (defn decide-action (area)
-    (prompt "A little drunk girl is bound to a chair down in the cellar with a bomb on it! The clock is ticking... Do you want to save her and maybe die or do you want to live with the feelings of guilt eternally and run back to the courtyard? Commands: live or die")
-        (let (input (prompt-user-action))
-        if(= "live" input)
-            (println "You dirty coward!")
-            (go-action west)
-        if(= "die" input)
-            ("You tried all your best but both of you died")
-            (game-over))
-        (do ; else
-            (println "Choose live or die!")
-            (action current-room)
-        
-            
+  (let (scenario (text "A little drunk girl is bound to a chair down in the cellar with "
+                       "a bomb on it! The clock is ticking... Do you want to save her "
+                       "and maybe die or do you want to live with the feelings of guilt "
+                       "eternally and run back to the courtyard? Commands: live or die ")
+        input (prompt scenario))
+    (if (= "live" input)
+      (do
+        (println "You dirty coward!")
+        (go-action area "go west"))
+    (if (= "die" input)
+      (do
+        (println "You tried all your best but both of you died")
+        (game-over))
+    (do ; else
+        (println "Choose live or die!")
+        (decide-action area))))))
 
 (def world
   (dict :main-hall (dict :name  "entrance hall"
@@ -39,7 +42,7 @@
                          :action decide-action))
 
         :cliff     (dict :name   "cliff"
-                         :action cliff-action)))
+                         :action cliff-action))
 
 (def starting-point (world :main-hall))
 
