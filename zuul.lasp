@@ -1,3 +1,7 @@
+(defn cliff-action ()
+  (println "You fell off a cliff and died instantly.")
+  true) ; Game over
+
 (def world
   (dict :main-hall (dict :name  "entrance hall"
                          :exits (dict :west  :west-wing
@@ -12,10 +16,14 @@
 
         :courtyard (dict :name  "courtyard"
                          :exits (dict :north :main-hall
-                                      :east  :cellar))
+                                      :east  :cellar
+                                      :south :cliff))
 
-        :cellar    (dict :name "cellar"
-                         :exits (dict :west :courtyard))))
+        :cellar    (dict :name  "cellar"
+                         :exits (dict :west :courtyard))
+
+        :cliff     (dict :name   "cliff"
+                         :action cliff-action)))
 
 (def starting-point (world :main-hall))
 
@@ -45,11 +53,23 @@
 (defn prompt-user-action ()
   (prompt "What do you want to do? "))
 
+(defn game-over () (println "Thank you for playing."))
+
+(defn enter-area (area-name)
+  (let (area         (world area-name)
+        enter-action (area :action))
+    (if enter-action
+      (if (enter-action)
+        (game-over)
+        (action area))
+      (action area)))) ; TODO: Fix duplication
+
+
 (defn go-action (room go-action)
   (let (direction (text-drop 3 go-action) ; remove "go "
         exits     (room :exits))
     (if (exits direction)
-      (action (world (exits direction)))
+      (enter-area (exits direction))
       (do
         (println "There is no exit to the " direction ".")
         (action room)))))
