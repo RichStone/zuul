@@ -38,13 +38,9 @@
   (comma-separate (keys (room :exits))))
 
 (defn print-room (room)
-  (print "You are in the ")
-  (print (room :name))
-  (println ".")
-
-  (print "Exits: ")
-  (println (exits room))
-  (println ""))
+  (println "You are in the " (room :name) ".")
+  (println "Exits: " (exits room))
+  (println))
 
 (defn prompt-user-action ()
   (prompt "What do you want to do? "))
@@ -55,7 +51,7 @@
     (if (exits direction)
       (action (world (exits direction)))
       (do
-        (println "Invalid direction.")
+        (println "There is no exit to the " direction ".")
         (action room)))))
 
 (defn action (current-room)
@@ -70,10 +66,10 @@
       (action current-room))))))
 
 (defn play ()
-  (println "Welcome to Zuul.")
+  (println "Welcome to Zuul."
   (println "Type 'go {direction}' to walk around.")
-  (println "Type 'quit' to quit the game.")
-  (println "")
+  (println "Type 'quit' to quit the game."))
+  (println)
   (action starting-point))
 
 (play)
