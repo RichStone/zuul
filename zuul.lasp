@@ -19,6 +19,8 @@
   (println "You fell off a cliff and died instantly.")
   (game-over))
 
+
+
 (defn found-baby! (state)
   (assoc state :found-baby? true))
 
@@ -41,6 +43,39 @@
   (game-over))
 
 
+
+(defn puppy-exploded! (state)
+  (assoc state :puppy-exploded? true))
+
+(defn puppy-exploded? (state)
+  (state :puppy-exploded?))
+
+(defn puppy-found (state)
+  (if (puppy-exploded? state)
+    (do
+      (println "You walk over the scattered remains of the exploded puppy. It smells...")
+      (action state))
+    (rescue-puppy state)))
+
+(defn rescue-puppy (state)
+  (println "You find a little puppy with a ticking bomb strapped to its collar.")
+  (println "Do you try to disarm it, or do you run away like a coward?")
+
+  (let (input (prompt "Choose 'disarm' or 'bail': "))
+    (if (= "bail" input)
+      (do
+        (println "You hear the puppy explode as you run back, you heartless monster.\n")
+        (go-action (puppy-exploded! state) :east))
+    (if (= "disarm" input)
+      (do
+        (println "You tried your best and both you and the puppy died.")
+        (game-over))
+    (do ; else
+        (println "You have to choose!")
+        (rescue-puppy state))))))
+
+
+
 ; --- Game state and level
 
 (def world
@@ -50,7 +85,8 @@
                                        :south :courtyard))
 
         :west-wing (dict :name   "west wing"
-                         :exits  (dict :east :main-hall))
+                         :exits  (dict :east :main-hall)
+                         :action puppy-found)
 
         :east-wing (dict :name   "east wing"
                          :exits  (dict :west :main-hall)
@@ -69,9 +105,10 @@
                          :action fall-off-cliff)))
 
 (def initial-state
-  (dict :world        world
-        :current-area (world :main-hall)
-        :found-baby?  false))
+  (dict :world           world
+        :current-area    (world :main-hall)
+        :found-baby?     false
+        :puppy-exploded? false))
 
 ; --- Gameplay
 
