@@ -1,57 +1,4 @@
-(defn fall-off-cliff (world area)
-  (println "You fell off a cliff and died instantly.")
-  (game-over))
-
-(defn dragon-baby-found (world area)
-  (if (not (world :found-baby?))
-    (do
-      (println "You found the dragon baby! It jumps on your shoulder and comes with you.")
-      (action (found-baby! world) area))
-    (action world area)))
-
-(defn dragon-mother-found (world area)
-  (println "You found the dragon mother!")
-  (if (world :found-baby?)
-    (do
-      (println "She is thrilled that you have returned her baby, so she kills you and feeds you to the baby dragon.")
-      (println "Congratulations! You returned the baby dragon to her mother."))
-    (println "She is enraged over losing her baby and rips your head off."))
-  (game-over))
-
-(defn found-baby! (world)
-  (assoc world :found-baby? true))
-
-(def world
-  (dict :found-baby?  false
-
-        :main-hall (dict :name   "entrance hall"
-                         :exits  (dict :west  :west-wing
-                                      :east  :east-wing
-                                      :south :courtyard))
-
-        :west-wing (dict :name   "west wing"
-                         :exits  (dict :east :main-hall))
-
-        :east-wing (dict :name   "east wing"
-                         :exits  (dict :west :main-hall)
-                         :action dragon-mother-found)
-
-        :courtyard (dict :name   "courtyard"
-                         :exits  (dict :north :main-hall
-                                      :east  :cellar
-                                      :south :cliff))
-
-        :cellar    (dict :name   "cellar"
-                         :exits  (dict :west :courtyard)
-                         :action dragon-baby-found)
-
-        :cliff     (dict :name   "cliff"
-                         :action fall-off-cliff)))
-
-(def initial-area (world :main-hall))
-
-; --- Helper functions
-
+; --- Utility functions
 (defn keys (d)
   (. d :keys))
 
@@ -66,14 +13,74 @@
   (list->text (drop n (text->list text))))
 
 
+; --- Enter area actions
+
+(defn fall-off-cliff (_)
+  (println "You fell off a cliff and died instantly.")
+  (game-over))
+
+(defn found-baby! (state)
+  (assoc state :found-baby? true))
+
+(defn found-baby? (state)
+  (state :found-baby?))
+
+(defn dragon-baby-found (state)
+  (if (found-baby? state)
+    (action state)
+    (do
+      (println "You found the dragon baby! It jumps on your shoulder and comes with you.")
+      (action (found-baby! state)))))
+
+(defn dragon-mother-found (state)
+  (println "You found the dragon mother!")
+  (if (found-baby? state)
+    (do (println "She is thrilled that you have returned her baby, so she kills you and feeds you to the baby dragon.")
+        (println "Congratulations! You returned the baby dragon to her mother."))
+    (println "She is enraged over losing her baby and rips your head off."))
+  (game-over))
 
 
-(defn exits (area)
+; --- Game state and level
+
+(def world
+  (dict :main-hall (dict :name   "entrance hall"
+                         :exits  (dict :west  :west-wing
+                                       :east  :east-wing
+                                       :south :courtyard))
+
+        :west-wing (dict :name   "west wing"
+                         :exits  (dict :east :main-hall))
+
+        :east-wing (dict :name   "east wing"
+                         :exits  (dict :west :main-hall)
+                         :action dragon-mother-found)
+
+        :courtyard (dict :name   "courtyard"
+                         :exits  (dict :north :main-hall
+                                       :east  :cellar
+                                       :south :cliff))
+
+        :cellar    (dict :name   "cellar"
+                         :exits  (dict :west :courtyard)
+                         :action dragon-baby-found)
+
+        :cliff     (dict :name   "cliff"
+                         :action fall-off-cliff)))
+
+(def initial-state
+  (dict :world        world
+        :current-area (world :main-hall)
+        :found-baby?  false))
+
+; --- Gameplay
+
+(defn exits-text (area)
   (comma-separate (keys (area :exits))))
 
 (defn print-area (area)
   (println "You are in the " (area :name) ".")
-  (println "Exits: " (exits area))
+  (println "Exits: " (exits-text area))
   (println))
 
 (defn prompt-user-action ()
@@ -83,34 +90,34 @@
   (println)
   (println "Thank you for playing."))
 
-(defn enter-area (world area-name)
-  (let (area         (world area-name)
+(defn enter-area (state area-name)
+  (let (area         ((state :world) area-name)
+        new-state    (assoc state :current-area area)
         enter-action (area :action))
 
     (if enter-action
-      (enter-action world area)
-      (action world area))))
+      (enter-action new-state)
+      (action new-state))))
 
-(defn go-action (world area go-action)
-  (let (direction (text-drop 3 go-action) ; remove "go "
-        exits     (area :exits))
+(defn go-action (state direction)
+  (let (exits ((state :current-area) :exits))
     (if (exits direction)
-      (enter-area world (exits direction))
+      (enter-area state (exits direction))
       (do
         (println "There is no exit to the " direction ".")
-        (action world area)))))
+        (action state)))))
 
-(defn action (world area)
-  (print-area area)
+(defn action (state)
+  (print-area (state :current-area))
 
   (let (input (prompt-user-action))
     (if (starts-with? input "go ")
-      (go-action world area input)
+      (go-action state (text-drop 3 input)) ; remove "go "
     (if (= "quit" input)
       (game-over)
     (do ; else
       (println "Invalid action.")
-      (action world area))))))
+      (action state))))))
 
 (defn play ()
   (println "Welcome to Zuul.")
@@ -119,6 +126,6 @@
   (println "Type 'go {direction}' to walk around.")
   (println "Type 'quit' to quit the game.")
   (println)
-  (action world initial-area))
+  (action initial-state))
 
 (play)
