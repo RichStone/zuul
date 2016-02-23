@@ -21,6 +21,12 @@
 
 
 
+(defn fall-in-hole (state)
+  (println "You fell into a hole.")
+  (action state))
+
+
+
 (defn found-baby! (state)
   (assoc state :found-baby? true))
 
@@ -95,14 +101,19 @@
         :courtyard (dict :name   "courtyard"
                          :exits  (dict :north :main-hall
                                        :east  :cellar
-                                       :south :cliff))
+                                       :south :cliff
+                                       :west  :hole))
 
         :cellar    (dict :name   "cellar"
                          :exits  (dict :west :courtyard)
                          :action dragon-baby-found)
 
         :cliff     (dict :name   "cliff"
-                         :action fall-off-cliff)))
+                         :action fall-off-cliff)
+
+        :hole      (dict :name   "hole"
+                         :action fall-in-hole
+                         :exits  (dict))))
 
 (def initial-state
   (dict :world           world
