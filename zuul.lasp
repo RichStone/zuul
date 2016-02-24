@@ -2,8 +2,8 @@
 (defn keys (d)
   (. d :keys))
 
-(defn comma-separate (d)
-  (. d :join ", "))
+(defn comma-separate (coll)
+  (. coll :join ", "))
 
 (defn starts-with? (text search)
   (. text :start_with? search))
