@@ -1,56 +1,9 @@
-(defn cliff-action (area)
-  (println "You fell off a cliff and died instantly.")
-  (game-over))
-
-(defn decide-action (area)
-  (let (scenario (text "A little drunk girl is bound to a chair down in the cellar with "
-                       "a bomb on it! The clock is ticking... Do you want to save her "
-                       "and maybe die or do you want to live with the feelings of guilt "
-                       "eternally and run back to the courtyard? Commands: live or die ")
-        input (prompt scenario))
-    (if (= "live" input)
-      (do
-        (println "You dirty coward!")
-        (go-action area "go west"))
-    (if (= "die" input)
-      (do
-        (println "You tried all your best but both of you died")
-        (game-over))
-    (do ; else
-        (println "Choose live or die!")
-        (decide-action area))))))
-
-(def world
-  (dict :main-hall (dict :name  "entrance hall"
-                         :exits (dict :west  :west-wing
-                                      :east  :east-wing
-                                      :south :courtyard))
-
-        :west-wing (dict :name  "west wing"
-                         :exits (dict :east :main-hall))
-
-        :east-wing (dict :name  "east wing"
-                         :exits (dict :west :main-hall))
-
-        :courtyard (dict :name  "courtyard"
-                         :exits (dict :north :main-hall
-                                      :east  :cellar
-                                      :south :cliff))
-
-        :cellar    (dict :name  "cellar"
-                         :exits (dict :west :courtyard)
-                         :action decide-action))
-
-        :cliff     (dict :name   "cliff"
-                         :action cliff-action))
-
-(def starting-point (world :main-hall))
-
+; --- Utility functions
 (defn keys (d)
   (. d :keys))
 
-(defn comma-separate (d)
-  (. d :join ", "))
+(defn comma-separate (coll)
+  (. coll :join ", "))
 
 (defn starts-with? (text search)
   (. text :start_with? search))
@@ -60,52 +13,164 @@
   (list->text (drop n (text->list text))))
 
 
+; --- Enter area actions
 
-(defn exits (room)
-  (comma-separate (keys (room :exits))))
+(defn fall-off-cliff (_)
+  (println "You fell off a cliff and died instantly.")
+  (game-over))
 
-(defn print-room (room)
-  (println "You are in the " (room :name) ".")
-  (println "Exits: " (exits room))
+(defn fall-in-hole (state)
+  (println "You fell into a hole.")
+  (action state))
+
+(defn found-baby! (state)
+  (assoc state :found-baby? true))
+>>>>>>> c8e5d548a23158e2ca9cee5aab1239f7700a2262
+
+(defn found-baby? (state)
+  (state :found-baby?))
+
+(defn dragon-baby-found (state)
+  (if (found-baby? state)
+    (action state)
+    (do
+      (println "You found the dragon baby! It jumps on your shoulder and comes with you.")
+      (action (found-baby! state)))))
+
+(defn dragon-mother-found (state)
+  (println "You found the dragon mother!")
+  (if (found-baby? state)
+    (do (println "She is thrilled that you have returned her baby, so she kills you and feeds you to the baby dragon.")
+        (println "Congratulations! You returned the baby dragon to her mother."))
+    (println "She is enraged over losing her baby and rips your head off."))
+  (game-over))
+
+
+
+(defn puppy-exploded! (state)
+  (assoc state :puppy-exploded? true))
+
+(defn puppy-exploded? (state)
+  (state :puppy-exploded?))
+
+(defn puppy-found (state)
+  (if (puppy-exploded? state)
+    (do
+      (println "You walk over the scattered remains of the exploded puppy. It smells...")
+      (action state))
+    (rescue-puppy state)))
+
+(defn rescue-puppy (state)
+  (println "You find a little puppy with a ticking bomb strapped to its collar.")
+  (println "Do you try to disarm it, or do you run away like a coward?")
+
+  (let (input (prompt "Choose 'disarm' or 'bail': "))
+    (if (= "bail" input)
+      (do
+        (println "You hear the puppy explode as you run back, you heartless monster.\n")
+        (go-action (puppy-exploded! state) :east))
+    (if (= "disarm" input)
+      (do
+        (println "You tried your best and both you and the puppy died.")
+        (game-over))
+    (do ; else
+        (println "You have to choose!")
+        (rescue-puppy state))))))
+
+
+
+; --- Game state and level
+
+(def world
+  (dict :main-hall (dict :name   "entrance hall"
+                         :exits  (dict :west  :west-wing
+                                       :east  :east-wing
+                                       :south :courtyard))
+
+        :west-wing (dict :name   "west wing"
+                         :exits  (dict :east :main-hall)
+                         :action puppy-found)
+
+        :east-wing (dict :name   "east wing"
+                         :exits  (dict :west :main-hall)
+                         :action dragon-mother-found)
+
+        :courtyard (dict :name   "courtyard"
+                         :exits  (dict :north :main-hall
+                                       :east  :cellar
+                                       :south :cliff
+                                       :west  :hole))
+
+        :cellar    (dict :name   "cellar"
+                         :exits  (dict :west :courtyard)
+                         :action dragon-baby-found)
+
+        :cliff     (dict :name   "cliff"
+                         :action fall-off-cliff)
+
+        :hole      (dict :name   "hole"
+                         :action fall-in-hole
+                         :exits  (dict))))
+
+(def initial-state
+  (dict :world           world
+        :current-area    (world :main-hall)
+        :found-baby?     false
+        :puppy-exploded? false))
+
+; --- Gameplay
+
+(defn exits-text (area)
+  (comma-separate (keys (area :exits))))
+
+(defn print-area (area)
+  (println "You are in the " (area :name) ".")
+  (println "Exits: " (exits-text area))
   (println))
 
 (defn prompt-user-action ()
   (prompt "What do you want to do? "))
 
-(defn game-over () (println "Thank you for playing."))
+(defn game-over ()
+  (println)
+  (println "Thank you for playing."))
 
-(defn enter-area (area-name)
-  (let (area         (world area-name)
+(defn enter-area (state area-name)
+  (let (area         ((state :world) area-name)
+        new-state    (assoc state :current-area area)
         enter-action (area :action))
-    (if enter-action
-      (enter-action area)
-      (action area))))
 
-(defn go-action (room go-action)
-  (let (direction (text-drop 3 go-action) ; remove "go "
-        exits     (room :exits))
+    (if enter-action
+      (enter-action new-state)
+      (action new-state))))
+
+(defn go-action (state direction)
+  (let (exits ((state :current-area) :exits))
     (if (exits direction)
-      (enter-area (exits direction))
+      (enter-area state (exits direction))
       (do
         (println "There is no exit to the " direction ".")
-        (action room)))))
+        (action state)))))
 
-(defn action (current-room)
-  (print-room current-room)
+(defn action (state)
+  (print-area (state :current-area))
+
   (let (input (prompt-user-action))
     (if (starts-with? input "go ")
-      (go-action current-room input)
+      (go-action state (text-drop 3 input)) ; remove "go "
     (if (= "quit" input)
-      (println "Bye!")
+      (game-over)
     (do ; else
       (println "Invalid action.")
-      (action current-room))))))
+      (action state))))))
 
 (defn play ()
-  (println "Welcome to Zuul."
-  (println "Type 'go {direction}' to walk around.")
-  (println "Type 'quit' to quit the game."))
+  (println "Welcome to Zuul.")
+  (println "Your objective is to help the baby dragon find its mother.")
   (println)
-  (action starting-point))
+  (println "Type 'go {direction}' to walk around.")
+  (println "Type 'quit' to quit the game.")
+  (println)
+  (action initial-state))
 
 (play)
