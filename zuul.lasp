@@ -1,12 +1,12 @@
 ; --- Utility functions
 (defn keys (d)
-  (. d :keys))
+  (.keys d))
 
 (defn comma-separate (coll)
-  (. coll :join ", "))
+  (.join coll ", "))
 
 (defn starts-with? (text search)
-  (. text :start_with? search))
+  (.start_with? text search))
 
 ; Drop n characters from text
 (defn text-drop (n text)
